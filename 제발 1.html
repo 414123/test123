@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>색상 진하기 시각화</title>
+    <style>
+        #container {
+            display: grid;
+            grid-template-columns: repeat(4, 50px);
+            grid-template-rows: repeat(4, 50px);
+            gap: 5px;
+            width: 230px;
+            height: 230px;
+            margin: 20px auto;
+            border: 2px solid #333;
+        }
+        .box {
+            width: 50px;
+            height: 50px;
+            background-color: rgba(255, 0, 0, 0); /* 초기값: 투명한 빨간색 */
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <!-- 사각형을 16개 생성 -->
+        <div class="box" id="box0"></div>
+        <div class="box" id="box1"></div>
+        <div class="box" id="box2"></div>
+        <div class="box" id="box3"></div>
+        <div class="box" id="box4"></div>
+        <div class="box" id="box5"></div>
+        <div class="box" id="box6"></div>
+        <div class="box" id="box7"></div>
+        <div class="box" id="box8"></div>
+        <div class="box" id="box9"></div>
+        <div class="box" id="box10"></div>
+        <div class="box" id="box11"></div>
+        <div class="box" id="box12"></div>
+        <div class="box" id="box13"></div>
+        <div class="box" id="box14"></div>
+        <div class="box" id="box15"></div>
+    </div>
+
+    <script>
+        // 색상을 업데이트하는 함수
+        function updateColors(data) {
+            data.forEach((value, index) => {
+                const opacity = value / 255; // 데이터 값을 0~1 사이의 불투명도로 변환
+                document.getElementById('box' + index).style.backgroundColor = `rgba(255, 0, 0, ${opacity})`;
+            });
+        }
+
+        // 블루투스 연결 및 데이터 수신
+        async function connectBluetooth() {
+            try {
+                // 블루투스 기기 선택 요청
+                const device = await navigator.bluetooth.requestDevice({
+                    filters: [{ name: 'HC-06' }], // HC-05 이름으로 필터링
+                    optionalServices: ['00001101-0000-1000-8000-00805f9b34fb'] // Serial Port Profile
+                });
+
+                // 블루투스 GATT 서버 연결
+                const server = await device.gatt.connect();
+                const service = await server.getPrimaryService('00001101-0000-1000-8000-00805f9b34fb');
+                const characteristic = await service.getCharacteristic('00001101-0000-1000-8000-00805f9b34fb');
+
+                // 데이터 수신 시작
+                characteristic.startNotifications();
+                characteristic.addEventListener('characteristicvaluechanged', (event) => {
+                    const value = new TextDecoder().decode(event.target.value);
+                    const data = value.split(',').map(Number); // 받은 데이터를 배열로 변환
+                    updateColors(data);
+                });
+            } catch (error) {
+                console.error("블루투스 연결에 실패:", error);
+            }
+        }
+
+        // 페이지 로드 시 블루투스 연결
+        document.addEventListener("DOMContentLoaded", connectBluetooth);
+    </script>
+</body>
+</html>
